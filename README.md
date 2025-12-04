@@ -17,6 +17,21 @@
 - https://www.hackster.io/news/erik-bjorgan-makes-voice-cloning-easy-with-the-applio-and-piper-based-textymcspeechy-e9bcef4246fb
 
 ## News
+
+#### **December 4 2025** - Added large dataset of phrases and small changes to recorder script
+- Added support for recording audio clips on a MacOS machine using `sox` instead of `alsa`.
+- A large set of 3000+ phrases in English, in batches of ~200 per file, in `dataset_recorder/datasets/en`
+- A very small set of 7 English phrases in `dataset_recorder/metadata_test.csv` for the purposes of testing the recorder script and the overall training process locally.
+- A couple of minor fixes and improvements to the recorder script.
+  - Fails if requirements are not met or operations do not succeed.
+  - Provides more information in the terminal when WAV files already exist.
+  - Lets you know when audio is playing.
+  - Stop recording when the user presses the space bar.
+  - Added the `G` key functionality at the end of the dataset.
+- Prepared the ground for removing long silence from audio after recording
+  - Recognize certain names so that silence is not removed from background noise recordings
+- Modified remove_roomtone.sh to recognize same file names as those used in recorder
+
 #### **March 8 2025** - A simpler option for pretrained checkpoints
 - `download_defaults.sh` now can use a `generic` language pack to download checkpoints that can be used as the starting point for training voices in any language. This option may exchange a bit of voice quality for convenience, but it will make it easier for new users to get started.
 - Please note that there don't appear to be any compatible `low` quality pretrained checkpoints available on huggingface right now.  This means that only `medium` and `high` quality voices will be able to be built from downloaded pretrained checkpoint files.  You can still train a `low` quality model from scratch and use one of its checkpoints as a pretrained checkpoint for future models.

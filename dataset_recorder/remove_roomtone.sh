@@ -38,7 +38,6 @@ show_usage() {
 # Set default directories
 input_dir=""
 output_dir=""
-room_tone="./roomtone.wav"
 
 # Parse arguments
 if [[ $# -lt 2 ]]; then
@@ -80,6 +79,18 @@ fi
 # Ensure output directory exists
 mkdir -p "$output_dir"
 
+if [ ! "$room_tone" ]; then
+  room_tone="./roomtone.wav"
+  for file in "$input_dir"/*.wav; do
+      # Check if it's a regular file AND if the filename matches the regex
+      if [[ -f "$file" ]] && [[ "$(basename "$file")" =~ ^_{0,3}(roomtone|(background)?_{0,3}noise)\.wav$ ]]; then
+          room_tone="$file"
+          echo "Found background noise file '$room_tone'"
+          break  # Stop processing after the first match
+      fi
+  done
+fi
+
 # Ensure the room tone file exists
 if [[ ! -f "$room_tone" ]]; then
   echo "Error: Room tone file '$room_tone' not found."
@@ -100,6 +111,12 @@ fi
 process_file() {
   local input_file="$1"
   local output_file="$2"
+
+  # If it's background noise for noise suppression, skip
+  if [[ "$(basename "$input_file")" =~ ^_{0,3}(roomtone|(background)?_{0,3}noise)\.wav ]]; then
+    echo "Skipping: $input_file"
+    return 0
+  fi
 
   echo "Processing: $input_file -> $output_file"
   sox "$input_file" "$output_file" noisered "$noise_profile" 0.21
