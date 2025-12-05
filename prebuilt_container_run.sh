@@ -3,38 +3,35 @@
 
 # Path to script that sets which custom pronunciation rules will be applied when the container is brought up
 AUTOMATIC_ESPEAK_RULE_SCRIPT="tts_dojo/ESPEAK_RULES/automated_espeak_rules.sh"
+
 fail=0  
 # Check that docker is installed
-if command -v docker &> /dev/null; then
-    :       
-else
-    echo "WARNING -- Required package Docker is not installed."
-    echo "install instructions can be found here:"
-    echo "https://docs.docker.com/engine/install/"
-    echo
-    echo
-    fail=1
+if ! command -v docker &> /dev/null; then
+  echo "WARNING -- Required package Docker is not installed."
+  echo "install instructions can be found here:"
+  echo "https://docs.docker.com/engine/install/"
+  echo
+  echo
+  fail=1
 fi
 
 # Check that NVIDIA container toolkit is installed
-if dpkg -l | grep -q nvidia-container-toolkit; then
-    :
-else
-    echo "WARNING! -- Required package NVIDIA Container Toolkit is not installed."
-    echo "install instructions can be found here:"
-    echo "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
-    echo
-    echo
-    fail=1
+if ! dpkg -l | grep -q nvidia-container-toolkit; then
+  echo "WARNING! -- Required package NVIDIA Container Toolkit is not installed."
+  echo "install instructions can be found here:"
+  echo "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
+  echo
+  echo
+  fail=1
 fi
 
 if [[ $fail -eq 1 ]]; then
-    echo "Unable to proceed without required tools."
-    echo
-    echo "Press <Enter> to exit"
-    echo
-    exit 1
- fi
+  echo "Unable to proceed without required tools."
+  echo
+  echo "Press <Enter> to exit"
+  echo
+  exit 1
+fi
 
 
 # Set default values if not provided

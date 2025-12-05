@@ -5,9 +5,18 @@
 - Voice dojos automatically start the `textymcspeechy-piper` docker image by calling `TextyMcSpeechy/run_container.sh` and automatically stop it when training ends.
 - If you have set up custom pronunciation rules in `tts_dojo/ESPEAK_RULES`, these can be configured to be activated automatically when your container runs.  A guide can be found [here](/tts_dojo/ESPEAK_RULES/README_custom_pronunciation.md)
  
+## TLTR: How to use the TTS Dojo
+1. Create your dataset for the training session.
+   1. Create a new folder in `tts_dojo/DATASETS`.
+   2. Copy all your denoised WAV files into this folder.
+   3. Copy your `metadata.csv` file into this folder (remove the line(s) for any background noise that are not included in your denoised dataset).
+2. Create a new voice dojo by running `sudo ./create_dojo.sh <VOICE_NAME>`
+   - Running it as `sudo` is necessary to create subfolders and files in the new dojo folder. 
+3. Start training by running `./run_training.sh` from within the dojo folder itself.
+
 
 ## About the training process
-- The [quick start guide](https://github.com/domesticatedviking/TextyMcSpeechy/blob/docker-dev/quick_start_guide.md) contains everything you need to know about getting your first training session running
+- The [quick start guide](../quick_start_guide.md) contains everything you need to know about getting your first training session running
 - Be aware the provided training scripts delete all data stored in  `<VOICE_NAME>_dojo/training_folder/lightning_logs` at the beginning of each training run.
 - When training starts, the training scripts run in a multi-window environment provided by `tmux`.  The tmux session is named `training`.
 - The training session can be shut down from any terminal window with the command `tmux kill-session` if there is a problem and the normal ways of shutting the session down are unavailable.

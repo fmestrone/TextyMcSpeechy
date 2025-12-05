@@ -1,52 +1,55 @@
 #!/bin/bash
+
+# Set up text coloring
+color_file="scripts/.colors"
+if [ -e $color_file ]; then
+  source $color_file
+else
+  echo "$0 - color_file not found"
+  echo "     expected location: $color_file"
+  echo
+  echo "exiting"
+  exit 1
+fi
+
 clear
 # Get voice name from directory name
 DOJO_NAME=$(awk -F'/' '{print $(NF)}' <<< "$PWD")
 VOICE_NAME=$(awk -F'/' '{print $(NF)}' <<< "$PWD" | sed 's/_dojo$//')
 DOJO_DIR="."
 
-#path to expected location of dataset configuration 
+# Path to expected location of dataset configuration
 DATASET_CONF="target_voice_dataset/dataset.conf"
 TRAIN_FROM_SCRATCH_FILE="target_voice_dataset/.SCRATCH"
 LIGHTNING_LOGS_CHECKPOINT_FOLDER="training_folder/lightning_logs/version_0/checkpoints"
 VOICE_CHECKPOINTS_FOLDER="voice_checkpoints"
 has_linked_dataset=false
 
-# Prevent execution in DOJO_CONTENTS - used only when making new dojos.  
-this_dir=$(pwd)
-dir_only=$(basename "$this_dir")
-if [ $dir_only = "DOJO_CONTENTS" ]; then
-   echo -e "${RED}The DOJO_CONTENTS folder is used as a template for other dojos."
-   echo -e "You should not run any scripts inside of DOJO_CONTENTS"
-   echo 
-   echo -e "Instead, run 'newdojo.sh' <voice name> to create a new dojo"
-   echo -e "and train your models in that folder." 
-   echo
-   echo -e "Exiting${RESET}"
-   exit 1
-fi
-
-# Set up text coloring.
-color_file="scripts/.colors"
-if [ -e $color_file ]; then
-    source $color_file
-else
-    echo "$0 - color_file not found"
-    echo "     expected location: $settings_file"
-    echo 
-    echo "exiting"
-    exit 1
+# Prevent execution in DOJO_CONTENTS - used only when making new dojos.
+if [ "$VOICE_NAME" = "DOJO_CONTENTS" ]; then
+  echo -e "${RED}The DOJO_CONTENTS folder is used as a template for other dojos."
+  echo -e "You should not run any scripts inside of DOJO_CONTENTS"
+  echo
+  echo -e "Instead, run 'newdojo.sh' <voice name> to create a new dojo"
+  echo -e "and train your models in that folder."
+  echo
+  echo -e "Exiting${RESET}"
+  exit 1
 fi
 
 # Launch textymcspeechy-piper docker image
-cd ../.. #container launcher files are in TextyMcSpeechy dir, 2 levels up from <name>_dojo
-bash run_container.sh  # this script runs either local_container_run.sh or prebuilt_container_run.sh
+
+pushd ../.. #container launcher files are in TextyMcSpeechy dir, 2 levels up from <name>_dojo
+
+if ! bash run_container.sh; then  # this script runs either local_container_run.sh or prebuilt_container_run.sh
+  exit 1
+fi
+
 echo
 echo "Press <Enter> to continue"
 read
-cd tts_dojo/$DOJO_NAME # return to this dojo after starting docker
 
-
+popd # return to this dojo after starting docker
 
 set -e # Exit immediately if any command returns a nonzero exit code
 
