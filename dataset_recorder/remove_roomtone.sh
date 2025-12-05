@@ -104,7 +104,7 @@ noise_profile="noise.prof"
 # Step 1: Create a noise profile if not already done
 if [[ ! -f "$noise_profile" ]]; then
   echo "Generating noise profile from $room_tone..."
-  sox "$room_tone" -n noiseprof "$noise_profile"
+  sox "$room_tone" -c 1 -r 22050 -b 16 -n noiseprof "$noise_profile"
 fi
 
 # Step 2: Process each file

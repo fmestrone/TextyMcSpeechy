@@ -40,7 +40,7 @@ choose_os_command() {
       record_cmd="arecord"
       play_cmd="aplay"
       # Flags: format=cd, type=wav, duration=30, rate=44100
-      record_pre_args=(-f cd -t wav -d 30 -r 44100)
+      record_pre_args=(-f S16_LE -c 1 -t wav -d 30 -r 22050)
       ;;
     Darwin*)
       # macOS (Darwin) typically uses 'sox' (command is 'rec' and 'play') or 'ffmpeg'
@@ -49,7 +49,7 @@ choose_os_command() {
       play_cmd="play"
       # Flags for sox/rec are slightly different but achieve the same result
       # -c 2 (stereo), -r 44100 (rate), trim 0 30 (duration)
-      record_pre_args=(-c 2 -r 44100)
+      record_pre_args=(-c 1 -b 16 -r 22050)
       record_post_args=(trim 0 30)
       ;;
     *)
@@ -137,29 +137,6 @@ trim_wav() {
       echo "Error: File '$input_file' not found."
       return 1
   fi
-  # If it's background noise for noise suppression, skip
-  if [[ "$(basename "$input_file")" =~ ^_{0,3}(roomtone|(background)?_{0,3}noise)\.wav ]]; then
-    return 0
-  fi
-
-  return 0
-
-  # use this to remove long silences from audio
-
-  ffmpeg -i input.wav -filter:a \
-  "silenceremove= \
-  start_periods=999:  \
-  start_duration=2:   \
-  start_threshold=0.02" \
-  output_trimmed_middle.mp3
-
-  local input_file="$1"
-
-  # Check if input file exists
-  if [ ! -f "$input_file" ]; then
-      echo "Error: File '$input_file' not found."
-      return 1
-  fi
 
   # Create a temporary file path
   temp_file="/tmp/trimmed.wav"
@@ -168,24 +145,40 @@ trim_wav() {
   duration=$(ffprobe -i "$input_file" -show_entries format=duration -v quiet -of csv="p=0")
 
   # Calculate the new duration (original duration minus 0.2 seconds)
-  new_duration=$(awk "BEGIN {printf \"%.3f\", $duration - 0.1}")
+  new_duration=$(awk "BEGIN {printf \"%.3f\", $duration - 0.2}")
 
-  # Trim and save to temporary file
-  ffmpeg -y -i "$input_file" -ss 00:00:00.050 -t "$new_duration" -c copy "$temp_file" >/dev/null 2>&1
-
-  # Check if ffmpeg command was successful
-  if [ $? -ne 0 ]; then
-      echo "Error: Failed to trim '$input_file'."
-      return 1
+  # Trim 0.1 second at the beginning and save to temporary file
+  if ! ffmpeg -y -i "$input_file" -ss 00:00:00.100 -t "$new_duration" -c copy "$temp_file" >/dev/null 2>&1; then
+    # Check if ffmpeg command was successful
+    echo "Error: Failed to trim '$input_file'."
+    return 1
   fi
   # remove original file
-  rm $input_file
+  rm "$input_file"
 
   # Copy temporary file back to original location with original filename
   cp "$temp_file" "$input_file"
 
   # Clean up temporary file
   rm "$temp_file"
+
+  # Want to remove long silences at beginning, end and in the middle?
+
+  return 0
+
+  # If it's background noise for noise suppression, skip
+  if [[ "$(basename "$input_file")" =~ ^_{0,3}(roomtone|(background)?_{0,3}noise)\.wav ]]; then
+    return 0
+  fi
+
+  # use this to remove long silences from audio
+
+  ffmpeg -i input.wav -filter:a \
+  "silenceremove= \
+  start_periods=999:  \
+  start_duration=2:   \
+  start_threshold=0.02" \
+  output_trimmed_middle.wav
 }
 
 # Function to stop recording if running
@@ -248,14 +241,14 @@ start_recording() {
     return 1
   fi
 
-  # Wait for 'r' or 'R' keypress to stop recording
+  # Wait for spacebar keypress to stop recording
   while true; do
     IFS= read -r -n 1 keypress
 
     if [[ "$keypress" == " " ]]; then
       stop_recording
       recorded[index]=true
-      trim_wav "$output_dir"/"$filename" "100"
+      trim_wav "$output_dir"/"$filename"
       break
     fi
   done
@@ -355,7 +348,7 @@ if [ $has_recordings -gt 0 ]; then
   echo -e "\n\n\n\n\n"
   center_text "$has_recordings file(s) from a previous session out of $arraylength already exist in directory \"$output_dir\"."
   if [ $no_recording_index -ge 0 ]; then
-    center_text "The first item with no recording is item #$(no_recording_index + 1)."
+    center_text "The first item with no recording is item #$no_recording_index."
   else
     center_text "All items already have a previous recording."
   fi
